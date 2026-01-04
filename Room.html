@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>System | Minimal Adaptive</title>
+    <title>Room/controls</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
@@ -27,19 +27,18 @@
         .status-dot { height: 8px; width: 8px; background: #ddd; border-radius: 50%; display: inline-block; margin-right: 6px; }
         .connected { background: var(--accent); box-shadow: 0 0 8px rgba(0,0,0,0.1); }
         
-        /* Settings Icon Button */
         .settings-btn { background: none; border: none; cursor: pointer; padding: 5px; display: flex; align-items: center; }
         .settings-btn svg { width: 20px; height: 20px; fill: var(--fg); }
 
-        /* Side Dashboard / Modal */
+        /* Side Panel */
         #side-panel {
             position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100%;
             background: white; z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: -10px 0 30px rgba(0,0,0,0.05); padding: 30px;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.05); padding: 25px; overflow-y: auto;
         }
         #side-panel.open { right: 0; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); z-index: 999; display: none; backdrop-filter: blur(2px); }
-        .close-panel { margin-bottom: 30px; background: none; border: none; font-size: 12px; font-weight: 600; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .close-panel { margin-bottom: 25px; background: none; border: none; font-size: 11px; font-weight: 600; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 
         main { display: flex; flex-direction: column; padding: 25px; gap: 30px; flex-grow: 1; }
         .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--sub); margin-bottom: 15px; display: block; }
@@ -55,26 +54,28 @@
         .relay-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
         .relay-btn b { display: block; font-size: 14px; margin-top: 4px; font-weight: 600; }
 
-        .card-box { padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: #fafafa; margin-bottom: 20px; }
+        .card-box { padding: 15px; border: 1px solid var(--border); border-radius: 15px; background: #fafafa; margin-bottom: 15px; }
         .sensor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .sensor-label { font-size: 9px; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; }
+        .sensor-label { font-size: 9px; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px; }
         .sensor-val { font-size: 1.8rem; font-weight: 400; }
 
-        /* Form styling inside Side Panel */
-        select, input[type="time"] { 
-            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; 
-            font-size: 14px; background: white; margin-bottom: 15px; outline: none;
+        /* Multi-Scheduler Styles */
+        .sched-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .sched-row div { flex: 1; }
+        input[type="time"] { 
+            width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 8px; 
+            font-size: 12px; background: white; outline: none;
         }
 
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid var(--border); }
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border); margin-top: 5px; }
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
-        .badge { font-size: 9px; padding: 2px 8px; border-radius: 10px; background: #eee; color: #777; font-weight: 600; margin-left: 5px; }
+        .badge { font-size: 8px; padding: 2px 6px; border-radius: 8px; background: #eee; color: #777; font-weight: 600; }
         .badge.active { background: #eafff2; color: var(--success); }
 
         .graph-wrap { height: 180px; border: 1px solid var(--border); border-radius: 18px; padding: 15px; background: #fff; }
@@ -84,9 +85,9 @@
             .full-w { grid-column: span 2; }
             .controls { grid-template-columns: repeat(4, 1fr); }
         }
-        label{
+        .rey{
           color:grey;
-          font-size: 12px;
+          font-size:12px;
           margin-bottom: 10px;
         }
     </style>
@@ -96,38 +97,43 @@
     <div class="overlay" id="overlay" onclick="togglePanel()"></div>
     <div id="side-panel">
         <button class="close-panel" onclick="togglePanel()">
-            <svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             BACK TO DASHBOARD
         </button>
 
-        <span class="section-title">Automation Settings</span>
-        <div class="card-box">
-            <span class="sensor-label">Assign To Device</span>
-            <select id="auto-target">
-                <option value="1">Channel 01</option>
-                <option value="2">Channel 02</option>
-                <option value="3">Channel 03</option>
-                <option value="4">Channel 04</option>
-            </select>
-
-            <span class="sensor-label">On</span>
-            <input type="time" id="on-time">
-
-            <span class="sensor-label">Off</span>
-            <input type="time" id="off-time">
-
-            <div class="toggle-row">
-                <div>
-                    <span class="sensor-label" style="margin:0;">Status <span id="status-badge" class="badge">OFF</span></span>
-                    <p style="font-size: 11px; color: var(--sub); margin-top: 2px;" id="auto-desc">Manual Mode</p>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="auto-enabled">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-        <p style="font-size: 10px; color: var(--sub); line-height: 1.6;"></p>
+        <span class="section-title">Multi-Channel Scheduler</span>
+        
+        <script>
+            // Generate 4 Automation Cards
+            for(let i=1; i<=4; i++) {
+                document.write(`
+                    <div class="card-box">
+                        <span class="sensor-label" style="color:var(--accent); font-weight:600;">Channel 0${i}</span>
+                        <div class="sched-row">
+                            <div>
+                                <span class="sensor-label">On</span>
+                                <input type="time" id="on-time-${i}" onchange="saveSched(${i})">
+                            </div>
+                            <div>
+                                <span class="sensor-label">Off</span>
+                                <input type="time" id="off-time-${i}" onchange="saveSched(${i})">
+                            </div>
+                        </div>
+                        <div class="toggle-row">
+                            <span id="badge-${i}" class="badge">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="auto-enabled-${i}" onchange="saveSched(${i})">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                `);
+            }
+        </script>
+        
+        <p style="font-size: 9px; color: var(--sub); line-height: 1.4; text-align: center; margin-top: 20px;">
+           
+        </p>
     </div>
 
     <nav>
@@ -137,7 +143,7 @@
                 <span id="mqtt-dot" class="status-dot"></span>
                 <span id="mqtt-text">OFFLINE</span>
             </div>
-            <button class="settings-btn" onclick="togglePanel()" title="Otomatisasi">
+            <button class="settings-btn" onclick="togglePanel()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
         </div>
@@ -171,7 +177,7 @@
                     for(let i=1; i<=4; i++) {
                         document.write(`
                             <button class="relay-btn" id="r-${i}" onclick="toggle(${i})">
-                                <span style="font-size:9px; opacity:0.5;">DEVICE 0${i}</span>
+                                <span style="font-size:9px; opacity:0.5;">CH.0${i}</span>
                                 <b id="state-${i}">OFF</b>
                             </button>
                         `);
@@ -187,79 +193,59 @@
             </div>
         </section>
     </main>
-<label><center>Rey</center></label>
+    <div class="rey">
+      <label>
+  <center>
+    Rey
+  </center>
+</label>
+    </div>
+
     <script>
         const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
-        // Toggle Panel Function
         function togglePanel() {
             const panel = document.getElementById('side-panel');
             const overlay = document.getElementById('overlay');
             const isOpen = panel.classList.contains('open');
-            
-            if(isOpen) {
-                panel.classList.remove('open');
-                overlay.style.display = 'none';
-            } else {
-                panel.classList.add('open');
-                overlay.style.display = 'block';
-            }
+            panel.classList.toggle('open');
+            overlay.style.display = isOpen ? 'none' : 'block';
         }
 
+        // Save and Load logic for 4 schedules
         window.onload = () => {
             for(let i=1; i<=4; i++) {
+                // Load Manual States
                 if(localStorage.getItem(`relay_v2_${i}`) === "1") updateUI(i, "1");
+                
+                // Load Automation Settings
+                document.getElementById(`on-time-${i}`).value = localStorage.getItem(`autoOnTime_${i}`) || "";
+                document.getElementById(`off-time-${i}`).value = localStorage.getItem(`autoOffTime_${i}`) || "";
+                document.getElementById(`auto-enabled-${i}`).checked = localStorage.getItem(`autoEnabled_${i}`) === "true";
+                updateBadge(i);
             }
-            
-            document.getElementById('auto-target').value = localStorage.getItem('autoTarget') || "1";
-            document.getElementById('on-time').value = localStorage.getItem('autoOnTime') || "";
-            document.getElementById('off-time').value = localStorage.getItem('autoOffTime') || "";
-            document.getElementById('auto-enabled').checked = localStorage.getItem('autoEnabled') === "true";
-            
-            updateAutoUI();
             initChart();
         };
 
-        const inputs = ['auto-target', 'on-time', 'off-time', 'auto-enabled'];
-        inputs.forEach(id => {
-            document.getElementById(id).addEventListener('change', () => {
-                localStorage.setItem('autoTarget', document.getElementById('auto-target').value);
-                localStorage.setItem('autoOnTime', document.getElementById('on-time').value);
-                localStorage.setItem('autoOffTime', document.getElementById('off-time').value);
-                localStorage.setItem('autoEnabled', document.getElementById('auto-enabled').checked);
-                updateAutoUI();
-            });
-        });
+        function saveSched(i) {
+            localStorage.setItem(`autoOnTime_${i}`, document.getElementById(`on-time-${i}`).value);
+            localStorage.setItem(`autoOffTime_${i}`, document.getElementById(`off-time-${i}`).value);
+            localStorage.setItem(`autoEnabled_${i}`, document.getElementById(`auto-enabled-${i}`).checked);
+            updateBadge(i);
+        }
 
-        function updateAutoUI() {
-            const isEnabled = document.getElementById('auto-enabled').checked;
-            const target = document.getElementById('auto-target').value;
-            const badge = document.getElementById('status-badge');
-            const desc = document.getElementById('auto-desc');
-
-            if(isEnabled) {
-                badge.innerText = "ACTIVE";
-                badge.classList.add('active');
-                desc.innerText = `Monitoring C${target}...`;
-            } else {
-                badge.innerText = "OFF";
-                badge.classList.remove('active');
-                desc.innerText = "Manual Mode";
-            }
+        function updateBadge(i) {
+            const isEnabled = document.getElementById(`auto-enabled-${i}`).checked;
+            const badge = document.getElementById(`badge-${i}`);
+            badge.innerText = isEnabled ? "ACTIVE" : "OFF";
+            isEnabled ? badge.classList.add('active') : badge.classList.remove('active');
         }
 
         function updateUI(id, state) {
             const btn = document.getElementById(`r-${id}`);
             const txt = document.getElementById(`state-${id}`);
             if(!btn || !txt) return;
-
-            if(state === "1") {
-                btn.classList.add('on');
-                txt.innerText = "ON";
-            } else {
-                btn.classList.remove('on');
-                txt.innerText = "OFF";
-            }
+            state === "1" ? (btn.classList.add('on'), txt.innerText = "ON") : (btn.classList.remove('on'), txt.innerText = "OFF");
         }
 
         function toggle(n) {
@@ -270,25 +256,26 @@
             updateUI(n, newState);
         }
 
+        // Check all 4 automation slots
         function checkAutomation() {
-            if (!document.getElementById('auto-enabled').checked) return;
-
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
                                 now.getMinutes().toString().padStart(2, '0');
 
-            const target = document.getElementById('auto-target').value;
-            const scheduledOn = document.getElementById('on-time').value;
-            const scheduledOff = document.getElementById('off-time').value;
+            for(let i=1; i<=4; i++) {
+                if (!document.getElementById(`auto-enabled-${i}`).checked) continue;
 
-            if (scheduledOn === currentTime) {
-                const btn = document.getElementById(`r-${target}`);
-                if (btn && !btn.classList.contains('on')) toggle(target);
-            }
+                const scheduledOn = document.getElementById(`on-time-${i}`).value;
+                const scheduledOff = document.getElementById(`off-time-${i}`).value;
 
-            if (scheduledOff === currentTime) {
-                const btn = document.getElementById(`r-${target}`);
-                if (btn && btn.classList.contains('on')) toggle(target);
+                if (scheduledOn === currentTime) {
+                    const btn = document.getElementById(`r-${i}`);
+                    if (btn && !btn.classList.contains('on')) toggle(i);
+                }
+                if (scheduledOff === currentTime) {
+                    const btn = document.getElementById(`r-${i}`);
+                    if (btn && btn.classList.contains('on')) toggle(i);
+                }
             }
         }
 
