@@ -193,7 +193,7 @@
             </div>
         </section>
     </main>
-    <div class="rey">
+    <div class="reyhan">
       <label>
   <center>
     Rey
@@ -204,119 +204,168 @@
     <script>
         const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
-        function togglePanel() {
-            const panel = document.getElementById('side-panel');
-            const overlay = document.getElementById('overlay');
-            const isOpen = panel.classList.contains('open');
-            panel.classList.toggle('open');
-            overlay.style.display = isOpen ? 'none' : 'block';
+function togglePanel() {
+    const panel = document.getElementById('side-panel');
+    const overlay = document.getElementById('overlay');
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    overlay.style.display = isOpen ? 'none' : 'block';
+}
+
+// Inisialisasi saat halaman dimuat
+window.onload = () => {
+    for(let i=1; i<=4; i++) {
+        // Load status manual terakhir dari memori browser
+        if(localStorage.getItem(`relay_v2_${i}`) === "1") {
+            updateUI(i, "1");
         }
+        
+        // Load pengaturan otomasi
+        document.getElementById(`on-time-${i}`).value = localStorage.getItem(`autoOnTime_${i}`) || "";
+        document.getElementById(`off-time-${i}`).value = localStorage.getItem(`autoOffTime_${i}`) || "";
+        document.getElementById(`auto-enabled-${i}`).checked = localStorage.getItem(`autoEnabled_${i}`) === "true";
+        updateBadge(i);
+    }
+    initChart();
+};
 
-        // Save and Load logic for 4 schedules
-        window.onload = () => {
-            for(let i=1; i<=4; i++) {
-                // Load Manual States
-                if(localStorage.getItem(`relay_v2_${i}`) === "1") updateUI(i, "1");
-                
-                // Load Automation Settings
-                document.getElementById(`on-time-${i}`).value = localStorage.getItem(`autoOnTime_${i}`) || "";
-                document.getElementById(`off-time-${i}`).value = localStorage.getItem(`autoOffTime_${i}`) || "";
-                document.getElementById(`auto-enabled-${i}`).checked = localStorage.getItem(`autoEnabled_${i}`) === "true";
-                updateBadge(i);
-            }
-            initChart();
-        };
+function saveSched(i) {
+    localStorage.setItem(`autoOnTime_${i}`, document.getElementById(`on-time-${i}`).value);
+    localStorage.setItem(`autoOffTime_${i}`, document.getElementById(`off-time-${i}`).value);
+    localStorage.setItem(`autoEnabled_${i}`, document.getElementById(`auto-enabled-${i}`).checked);
+    updateBadge(i);
+}
 
-        function saveSched(i) {
-            localStorage.setItem(`autoOnTime_${i}`, document.getElementById(`on-time-${i}`).value);
-            localStorage.setItem(`autoOffTime_${i}`, document.getElementById(`off-time-${i}`).value);
-            localStorage.setItem(`autoEnabled_${i}`, document.getElementById(`auto-enabled-${i}`).checked);
-            updateBadge(i);
+function updateBadge(i) {
+    const isEnabled = document.getElementById(`auto-enabled-${i}`).checked;
+    const badge = document.getElementById(`badge-${i}`);
+    badge.innerText = isEnabled ? "ACTIVE" : "OFF";
+    isEnabled ? badge.classList.add('active') : badge.classList.remove('active');
+}
+
+function updateUI(id, state) {
+    const btn = document.getElementById(`r-${id}`);
+    const txt = document.getElementById(`state-${id}`);
+    if(!btn || !txt) return;
+
+    if (state === "1") {
+        btn.classList.add('on');
+        txt.innerText = "ON";
+    } else {
+        btn.classList.remove('on');
+        txt.innerText = "OFF";
+    }
+}
+
+function toggle(n) {
+    const btn = document.getElementById(`r-${n}`);
+    const currentState = btn.classList.contains('on') ? "1" : "0";
+    const newState = currentState === "1" ? "0" : "1";
+    
+    // Simpan ke local storage dan kirim ke MQTT
+    localStorage.setItem(`relay_v2_${n}`, newState);
+    client.publish(`test/ulang/r${n}`, newState, { retain: true });
+    updateUI(n, newState);
+}
+
+// Logika Otomatisasi (Interval 1 Detik)
+function checkAutomation() {
+    const now = new Date();
+    // Format HH:mm (Contoh: "13:00")
+    const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                        now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds();
+
+    for(let i=1; i<=4; i++) {
+        const isEnabled = document.getElementById(`auto-enabled-${i}`).checked;
+        if (!isEnabled) continue;
+
+        const scheduledOn = document.getElementById(`on-time-${i}`).value;
+        const scheduledOff = document.getElementById(`off-time-${i}`).value;
+        const btn = document.getElementById(`r-${i}`);
+        const isOn = btn.classList.contains('on');
+
+        // Trigger ON: Jika jam cocok, detik ke-0, dan posisi sedang mati
+        if (scheduledOn === currentTime && seconds === 0 && !isOn) {
+            console.log(`Auto ON for Channel ${i}`);
+            toggle(i);
         }
-
-        function updateBadge(i) {
-            const isEnabled = document.getElementById(`auto-enabled-${i}`).checked;
-            const badge = document.getElementById(`badge-${i}`);
-            badge.innerText = isEnabled ? "ACTIVE" : "OFF";
-            isEnabled ? badge.classList.add('active') : badge.classList.remove('active');
+        
+        // Trigger OFF: Jika jam cocok, detik ke-0, dan posisi sedang hidup
+        if (scheduledOff === currentTime && seconds === 0 && isOn) {
+            console.log(`Auto OFF for Channel ${i}`);
+            toggle(i);
         }
+    }
+}
 
-        function updateUI(id, state) {
-            const btn = document.getElementById(`r-${id}`);
-            const txt = document.getElementById(`state-${id}`);
-            if(!btn || !txt) return;
-            state === "1" ? (btn.classList.add('on'), txt.innerText = "ON") : (btn.classList.remove('on'), txt.innerText = "OFF");
+function clock() {
+    const d = new Date();
+    document.getElementById('main-time').innerText = d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('main-date').innerText = d.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'short'}).toUpperCase();
+    
+    // Cek otomatisasi setiap detik
+    checkAutomation();
+}
+
+setInterval(clock, 1000); clock();
+
+// --- Chart Logic ---
+let tempChart;
+function initChart() {
+    const ctx = document.getElementById('tempChart').getContext('2d');
+    tempChart = new Chart(ctx, {
+        type: 'line',
+        data: { 
+            labels: Array(20).fill(''), 
+            datasets: [{ 
+                data: Array(20).fill(null), 
+                borderColor: '#000', 
+                borderWidth: 1.5, 
+                pointRadius: 0, 
+                tension: 0.4 
+            }] 
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            scales: { 
+                x: { display: false }, 
+                y: { grid: { color: '#f8f8f8' }, ticks: { font: { size: 9 } } } 
+            } 
         }
+    });
+}
 
-        function toggle(n) {
-            const btn = document.getElementById(`r-${n}`);
-            const newState = btn.classList.contains('on') ? "0" : "1";
-            localStorage.setItem(`relay_v2_${n}`, newState);
-            client.publish(`test/ulang/r${n}`, newState);
-            updateUI(n, newState);
-        }
+// --- MQTT Events ---
+client.on('connect', () => {
+    document.getElementById('mqtt-dot').classList.add('connected');
+    document.getElementById('mqtt-text').innerText = "LIVE";
+    client.subscribe('test/ulang/#');
+});
 
-        // Check all 4 automation slots
-        function checkAutomation() {
-            const now = new Date();
-            const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                                now.getMinutes().toString().padStart(2, '0');
+client.on('message', (topic, message) => {
+    const msg = message.toString();
+    
+    if (topic === 'test/ulang/temp') {
+        document.getElementById('temp').innerText = msg;
+        tempChart.data.datasets[0].data.push(parseFloat(msg));
+        tempChart.data.datasets[0].data.shift();
+        tempChart.update('none');
+    }
+    
+    if (topic === 'test/ulang/hum') {
+        document.getElementById('hum').innerText = msg;
+    }
+    
+    if (topic.startsWith('test/ulang/r')) {
+        const id = topic.replace('test/ulang/r', '');
+        updateUI(id, msg);
+        localStorage.setItem(`relay_v2_${id}`, msg);
+    }
+});
 
-            for(let i=1; i<=4; i++) {
-                if (!document.getElementById(`auto-enabled-${i}`).checked) continue;
-
-                const scheduledOn = document.getElementById(`on-time-${i}`).value;
-                const scheduledOff = document.getElementById(`off-time-${i}`).value;
-
-                if (scheduledOn === currentTime) {
-                    const btn = document.getElementById(`r-${i}`);
-                    if (btn && !btn.classList.contains('on')) toggle(i);
-                }
-                if (scheduledOff === currentTime) {
-                    const btn = document.getElementById(`r-${i}`);
-                    if (btn && btn.classList.contains('on')) toggle(i);
-                }
-            }
-        }
-
-        function clock() {
-            const d = new Date();
-            document.getElementById('main-time').innerText = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
-            document.getElementById('main-date').innerText = d.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'short'}).toUpperCase();
-            if (d.getSeconds() === 0) checkAutomation();
-        }
-        setInterval(clock, 1000); clock();
-
-        let tempChart;
-        function initChart() {
-            const ctx = document.getElementById('tempChart').getContext('2d');
-            tempChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: Array(20).fill(''), datasets: [{ data: Array(20).fill(null), borderColor: '#000', borderWidth: 1.5, pointRadius: 0, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#f8f8f8' }, ticks: { font: { size: 9 } } } } }
-            });
-        }
-
-        client.on('connect', () => {
-            document.getElementById('mqtt-dot').classList.add('connected');
-            document.getElementById('mqtt-text').innerText = "LIVE";
-            client.subscribe('test/ulang/#');
-        });
-
-        client.on('message', (topic, message) => {
-            const msg = message.toString();
-            if (topic === 'test/ulang/temp') {
-                document.getElementById('temp').innerText = msg;
-                tempChart.data.datasets[0].data.push(parseFloat(msg));
-                tempChart.data.datasets[0].data.shift();
-                tempChart.update('none');
-            }
-            if (topic === 'test/ulang/hum') document.getElementById('hum').innerText = msg;
-            if (topic.startsWith('test/ulang/r')) {
-                const id = topic.replace('test/ulang/r', '');
-                updateUI(id, msg);
-            }
-        });
     </script>
 </body>
 </html>
